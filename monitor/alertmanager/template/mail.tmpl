@@ -1,0 +1,27 @@
+{{ define "mail.default.message" }}
+{{- if gt (len .Alerts.Firing) 0 -}}
+{{- range $index, $alert := .Alerts -}}
+==========异常告警==========<br>
+告警类型: {{ $alert.Labels.alertname }}<br>
+告警级别: {{ $alert.Labels.severity }}<br>
+实例信息: {{ $alert.Labels.instance }}<br>
+告警概要: {{ $alert.Annotations.summary}}<br>
+告警详情: {{ $alert.Annotations.description}}<br>
+故障时间: {{ ($alert.StartsAt.Add 28800e9).Format "2006-01-02 15:04:05" }}<br>
+============END============<br>
+{{- end }}
+{{- end }}
+{{- if gt (len .Alerts.Resolved) 0 -}}
+{{- range $index, $alert := .Alerts -}}
+==========异常恢复==========<br>
+告警类型: {{ $alert.Labels.alertname }}<br>
+告警级别: {{ $alert.Labels.severity }}<br>
+实例信息: {{ $alert.Labels.instance }}<br>
+告警概要: {{$alert.Annotations.summary}}<br>
+告警详情: {{ $alert.Annotations.description}}<br>
+故障时间: {{ ($alert.StartsAt.Add 28800e9).Format "2006-01-02 15:04:05" }}<br>
+恢复时间: {{ ($alert.EndsAt.Add 28800e9).Format "2006-01-02 15:04:05" }}<br>
+============END============
+{{- end }}
+{{- end }}
+{{- end }}

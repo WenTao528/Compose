@@ -1,0 +1,22 @@
+groups:
+  - name: HostStatusAlert
+    rules:
+    - alert: HostDiskUsageAlert
+      expr: 100 - (node_filesystem_free_bytes{fstype=~"xfs|ext4"} / node_filesystem_size_bytes{fstype=~"xfs|ext4"}) * 100 > 80
+      for: 1m
+      labels:
+        Disk: HighUsage
+        severity: warning
+      annotations:
+        summary: "Instance {{ $labels.instance }} disk usage high"
+        description: "{{ $labels.instance }} {{ $labels.mountpoint }} disk usage above 80% (current value is {{ $value }})"
+    
+    - alert: HostMemoryUsageAlert
+      expr: (1- (node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes) * 100 > 20
+      for: 1m
+      labels:
+        Memory: HighUsage
+        severity: warning
+      annotations:
+        summary: "Instance {{ $labels.instance }} memory usage high"
+        description: "{{ $labels.instance }} memory usage above 20% (current value is {{ $value }})"

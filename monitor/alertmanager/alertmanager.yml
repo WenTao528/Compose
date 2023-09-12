@@ -1,0 +1,33 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 10.86.50.188:465
+  smtp_from: 1763643364@qq.com
+  smtp_auth_username: 1763643364@qq.com
+  smtp_auth_identity: 1763643364@qq.com
+  smtp_auth_password: weiwentao528
+  smtp_require_tls: false
+
+route:
+  group_by: ['alertname','instance']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'default-receiver'
+receivers:
+- name: 'default-receiver'
+  email_configs:
+  - to: wwt@qq.com
+    html: '{{ template "mail.default.message" . }}'
+    send_resolved: true
+    tls_config:
+      insecure_skip_verify: true
+inhibit_rules:
+  - source_match:
+      severity: 'warning'
+      alertname: 'HostMemoryUsageAlert'
+    target_match:
+      severity: 'warning'
+    equal: ['instance']
+
+templates:
+  - '/etc/alertmanager/template/mail.tmpl'
