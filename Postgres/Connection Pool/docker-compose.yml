@@ -1,0 +1,59 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:14.8-alpine
+    container_name: postgres
+    ports:
+      - 15432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PGDATA=/var/lib/postgresql/data
+      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - 9187:9187
+    environment:
+      - DATA_SOURCE_NAME=postgresql://postgres:postgres@postgres:5432/postgres?sslmode=disable
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: pgbouncer
+    ports:
+      - 6432:5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./pgbouncer:/etc/pgbouncer/
+    environment:
+      - AUTH_TYPE=scram-sha-256
+      # 如果使用md5，但是从postgres查询的密码是scram-sha-256，实际会使用cram-sha-256验证
+      # 但是/etc/pgbouncer/userlist.txt提供的密码默认是md5加密的，所以需要修改userlist.txt文件 
+      # 格式："postgres" "postgres"
+      # - AUTH_TYPE=md5
+      - AUTH_FILE=/etc/pgbouncer/userlist.txt
+      - AUTH_USER=postgres
+      - AUTH_QUERY=SELECT usename, passwd FROM pg_shadow WHERE usename=$$1
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_NAME=postgres
+      - POOL_MODE=session
+      - ADMIN_USERS=postgres
+      - MAX_CLIENT_CONN=100
+      - DEFAULT_POOL_SIZE=20
+      - SERVER_RESET_QUERY=DISCARD ALLL

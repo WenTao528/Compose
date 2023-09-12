@@ -1,0 +1,80 @@
+version: '3.7'
+
+services:
+  master:
+    image: postgres:14.8-alpine
+    container_name: master-sync
+    volumes:
+      - ./init-user-db-master.sh:/docker-entrypoint-initdb.d/init-user-db-master.sh:ro
+      # - ./master/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  slave1:
+    image: postgres:14.8-alpine
+    container_name: slave-sync1
+    depends_on:
+      master:
+        condition: service_healthy
+    volumes:
+      - ./init-user-db-slave1.sh:/docker-entrypoint-initdb.d/init-user-db-slave1.sh:ro
+      # - ./slave/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  slave2:
+    image: postgres:14.8-alpine
+    container_name: slave-sync2
+    depends_on:
+      master:
+        condition: service_healthy
+    volumes:
+      - ./init-user-db-slave2.sh:/docker-entrypoint-initdb.d/init-user-db-slave2.sh:ro
+      # - ./slave/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  slave3:
+    image: postgres:14.8-alpine
+    container_name: slave-sync3
+    depends_on:
+      master:
+        condition: service_healthy
+    volumes:
+      - ./init-user-db-slave3.sh:/docker-entrypoint-initdb.d/init-user-db-slave3.sh:ro
+      # - ./slave/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s

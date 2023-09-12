@@ -1,0 +1,62 @@
+version: '3.7'
+
+services:
+  primary:
+    image: postgres:14.8-alpine
+    container_name: primary
+    volumes:
+      - ./init-user-db-primary.sh:/docker-entrypoint-initdb.d/init-user-db-primary.sh:ro
+      # - ./master/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  cascading-standby:
+    image: postgres:14.8-alpine
+    container_name: cascading-standby
+    depends_on:
+      primary:
+        condition: service_healthy
+    volumes:
+      - ./init-user-db-cascading-slave.sh:/docker-entrypoint-initdb.d/init-user-db-cascading-slave.sh:ro
+      # - ./trigger:/tmp/replica_trigger/
+      # - ./slave/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  standby:
+    image: postgres:14.8-alpine
+    container_name: standby
+    depends_on:
+      cascading-standby:
+        condition: service_healthy
+    volumes:
+      - ./init-user-db-standby.sh:/docker-entrypoint-initdb.d/init-user-db-standby.sh:ro
+      # - ./trigger:/tmp/replica_trigger/
+      # - ./slave/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s

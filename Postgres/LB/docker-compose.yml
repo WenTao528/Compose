@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+  db1:
+    image: postgres:14.8-alpine
+    container_name: postgres1
+    volumes:
+      - ./init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:ro
+    # ports:
+    #   - "5435:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+  db2:
+    image: postgres:14.8-alpine
+    container_name: postgres2
+    volumes:
+      - ./init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:ro
+    # ports:
+    #   - "5435:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+  lb:
+    image: haproxy:2.8.2-alpine
+    container_name: haproxy
+    # privileged: true
+    # sysctls:
+    #   - net.ipv4.ip_unprivileged_port_start=0
+    ports:
+      - "5435:8000"
+      - "5436:8001"
+    depends_on:
+      db1:
+        condition: service_healthy
+      db2:
+        condition: service_healthy
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg

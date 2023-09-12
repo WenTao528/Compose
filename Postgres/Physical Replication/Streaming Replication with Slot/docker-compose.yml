@@ -1,0 +1,41 @@
+version: '3.7'
+
+services:
+  master:
+    image: postgres:14.8-alpine
+    container_name: master-slot
+    volumes:
+      - ./init-user-db-master.sh:/docker-entrypoint-initdb.d/init-user-db-master.sh:ro
+      - ./master/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
+  slave:
+    image: postgres:14.8-alpine
+    container_name: slave-slot
+    depends_on:
+      master:
+        condition: service_healthy
+    volumes:
+      - ./init-user-db-slave.sh:/docker-entrypoint-initdb.d/init-user-db-slave.sh:ro
+      - ./trigger:/tmp/replica_trigger/
+      - ./slave/data:/var/lib/postgresql/data
+    # ports:
+    #   - 5434:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 5s
